@@ -43,6 +43,12 @@ async function read(){
   await redis(["SET",KEY,JSON.stringify(d)]);return d}
 module.exports=async(req,res)=>{
   res.setHeader("Cache-Control","no-store");
+  // Diagnostic: open /api/data?check=1 in the browser. Shows only yes/no flags, no secrets, no data.
+  if(req.query&&req.query.check!==undefined){
+    const out={hasDbUrl:!!DB_URL,hasDbToken:!!DB_TOKEN,passwordIsSet:!!PASS};
+    try{out.redisPing=await redis(["PING"])}catch(e){out.redisPing="FAIL: "+e.message}
+    return res.status(200).json(out);
+  }
   // Password is optional: if TEAM_PASSWORD is not set in Vercel, the page is open to anyone with the link.
   if(PASS&&req.headers["x-team-key"]!==PASS)return res.status(401).json({error:"auth"});
   try{
@@ -62,5 +68,5 @@ module.exports=async(req,res)=>{
       await redis(["SET",KEY,JSON.stringify(d)]);
     }
     res.status(200).json(d);
-  }catch(e){res.status(500).json({error:"server"})}
+  }catch(e){res.status(500).json({error:"server",detail:String(e&&e.message||e).slice(0,200)})}
 };

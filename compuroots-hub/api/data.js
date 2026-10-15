@@ -43,8 +43,8 @@ async function read(){
   await redis(["SET",KEY,JSON.stringify(d)]);return d}
 module.exports=async(req,res)=>{
   res.setHeader("Cache-Control","no-store");
-  if(!PASS)return res.status(500).json({error:"TEAM_PASSWORD is not set"});
-  if(req.headers["x-team-key"]!==PASS)return res.status(401).json({error:"auth"});
+  // Password is optional: if TEAM_PASSWORD is not set in Vercel, the page is open to anyone with the link.
+  if(PASS&&req.headers["x-team-key"]!==PASS)return res.status(401).json({error:"auth"});
   try{
     const d=await read();
     if(req.method==="POST"){
